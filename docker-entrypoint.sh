@@ -59,7 +59,49 @@ configure_log_config() {
 	sed -i "s|.*filename:\s/homeserver.log|    filename: /data/homeserver.log|g" "/data/${SERVER_NAME}.log.config"
 }
 
+generate_config() {
+	breakup="0"
+
+	if [ -z "${SERVER_NAME}" ]; then
+		echo "SERVER_NAME not set, 'localhost' by default"
+		export SERVER_NAME="localhost"
+	fi
+
+	if [ -z "${REPORT_STATS}" ]; then
+		echo "REPORT_STATS not set, 'yes' by default"
+		export REPORT_STATS="yes"
+	fi
+
+	[[ "${REPORT_STATS}" != "yes" ]] && [[ "${REPORT_STATS}" != "no" ]] && \
+		echo "STOP! REPORT_STATS needs to be 'no' or 'yes'" && breakup="1"
+
+	[[ "${breakup}" == "1" ]] && exit 1
+
+	echo "-=> generate turn config"
+	turnkey=$(pwgen -s 64 1)
+	generate_turn_key $turnkey /data/turnserver.conf
+
+	echo "-=> generate synapse config"
+	generate_synapse_file /data/homeserver.tmp
+	echo "-=> configure some settings in homeserver.yaml"
+	configure_homeserver_yaml $turnkey /data/homeserver.tmp
+
+	mv /data/homeserver.tmp /data/homeserver.yaml
+
+	echo "-=> configure some settings in ${SERVER_NAME}.log.config"
+	configure_log_config
+
+	echo ""
+	echo "-=> you have to review the generated configuration file homeserver.yaml:"
+
+	cat /data/homeserver.yaml
+}
+
 if [ "$1" = 'start' ]; then
+	if [ ! -f /data/homeserver.yaml ]; then
+		generate_config
+	fi
+
 	if [ -f /data/turnserver.conf ]; then
 		echo "-=> start turn"
 		if [ -f /conf/supervisord-turnserver.conf.deactivated ]; then
@@ -93,30 +135,7 @@ if [ "$1" = 'diff' ]; then
 fi
 
 if [ "$1" = 'generate' ]; then
-	breakup="0"
-	[[ -z "${SERVER_NAME}" ]] && echo "STOP! environment variable SERVER_NAME must be set" && breakup="1"
-	[[ -z "${REPORT_STATS}" ]] && echo "STOP! environment variable REPORT_STATS must be set to 'no' or 'yes'" && breakup="1"
-	[[ "${REPORT_STATS}" != "yes" ]] && [[ "${REPORT_STATS}" != "no" ]] && \
-		echo "STOP! REPORT_STATS needs to be 'no' or 'yes'" && breakup="1"
-
-	[[ "${breakup}" == "1" ]] && exit 1
-
-	echo "-=> generate turn config"
-	turnkey=$(pwgen -s 64 1)
-	generate_turn_key $turnkey /data/turnserver.conf
-
-	echo "-=> generate synapse config"
-	generate_synapse_file /data/homeserver.tmp
-	echo "-=> configure some settings in homeserver.yaml"
-	configure_homeserver_yaml $turnkey /data/homeserver.tmp
-
-	mv /data/homeserver.tmp /data/homeserver.yaml
-
-	echo "-=> configure some settings in ${SERVER_NAME}.log.config"
-	configure_log_config
-
-	echo ""
-	echo "-=> you have to review the generated configuration file homeserver.yaml"
+	generate_config()
 fi
 
 exec "$@"
