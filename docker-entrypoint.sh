@@ -35,12 +35,15 @@ configure_homeserver_yaml() {
 
 	local ymltemp="$(mktemp)"
 
+	local enable_registration=$([[ $REGISTRATION_ENABLED -eq "yes" ]] && echo "True" || echo "False" )
+
 	awk -v TURNURIES="turn_uris: [\"turn:${SERVER_NAME}:3478?transport=udp\", \"turn:${SERVER_NAME}:3478?transport=tcp\"]" \
 	    -v TURNSHAREDSECRET="turn_shared_secret: \"${turnkey}\"" \
 	    -v PIDFILE="pid_file: /data/homeserver.pid" \
 	    -v DATABASE="database: \"/data/homeserver.db\"" \
 	    -v LOGFILE="log_file: \"/data/homeserver.log\"" \
 	    -v MEDIASTORE="media_store_path: \"/data/media_store\"" \
+	    -v ENABLE_REGISTRATION="enable_registration: ${enable_registration}" \
 	    '{
 		sub(/turn_shared_secret: "YOUR_SHARED_SECRET"/, TURNSHAREDSECRET);
 		sub(/turn_uris: \[\]/, TURNURIES);
@@ -48,6 +51,7 @@ configure_homeserver_yaml() {
 		sub(/database: "\/homeserver.db"/, DATABASE);
 		sub(/log_file: "\/homeserver.log"/, LOGFILE);
 		sub(/media_store_path: "\/media_store"/, MEDIASTORE);
+		sub(/enable_registration: False/, ENABLE_REGISTRATION);
 		print;
 	    }' "${filepath}" > "${ymltemp}"
 
@@ -72,8 +76,16 @@ generate_config() {
 		export REPORT_STATS="yes"
 	fi
 
+	if [ -z "${REGISTRATION_ENABLED}" ]; then
+		echo "REGISTRATION_ENABLED not set, 'yes' by default"
+		export REGISTRATION_ENABLED="yes"
+	fi
+
 	[[ "${REPORT_STATS}" != "yes" ]] && [[ "${REPORT_STATS}" != "no" ]] && \
 		echo "STOP! REPORT_STATS needs to be 'no' or 'yes'" && breakup="1"
+
+	[[ "${REGISTRATION_ENABLED}" != "yes" ]] && [[ "${REGISTRATION_ENABLED}" != "no" ]] && \
+		echo "STOP! REGISTRATION_ENABLED needs to be 'no' or 'yes'" && breakup="1"
 
 	[[ "${breakup}" == "1" ]] && exit 1
 
