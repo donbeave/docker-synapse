@@ -106,5 +106,5 @@ WORKDIR /data
 COPY docker-entrypoint.sh /docker-entrypoint.sh
 ENTRYPOINT ["/docker-entrypoint.sh"]
 
-EXPOSE 8448
+EXPOSE 8008 8448 3478
 CMD ["start"]
