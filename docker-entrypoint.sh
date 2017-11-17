@@ -52,6 +52,8 @@ configure_homeserver_yaml() {
 		sub(/log_file: "\/homeserver.log"/, LOGFILE);
 		sub(/media_store_path: "\/media_store"/, MEDIASTORE);
 		sub(/enable_registration: False/, ENABLE_REGISTRATION);
+		sub(/web_client: True/, "web_client: False");
+		sub(/\# web_client_location: "\/path\/to\/web\/root"/, "web_client_location: \"/webclient\"")
 		print;
 	    }' "${filepath}" > "${ymltemp}"
 

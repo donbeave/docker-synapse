@@ -93,6 +93,9 @@ RUN set -ex \
     apt-get autoremove -y ;\
     rm -rf /var/lib/apt/* /var/cache/apt/*
 
+COPY config/index.html /webclient/
+COPY config/logo.png /webclient/
+
 RUN mkdir /data \
     && mkdir /uploads \
     && chown synapse:synapse /data \
