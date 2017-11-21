@@ -95,6 +95,7 @@ RUN set -ex \
 
 COPY config/index.html /webclient/
 COPY config/logo.png /webclient/
+COPY home_server_config.py /home_server_config.py
 
 RUN mkdir /data \
     && mkdir /uploads \

@@ -1,10 +1,5 @@
 #!/usr/bin/env bash
 
-if [ ! -z "${ROOTPATH}" ]; then
-	echo ":: We have changed the semantic and doesn't need the ROOTPATH"
-	echo ":: variable anymore"
-fi
-
 generate_turn_key() {
 	local turnkey="${1}"
 	local filepath="${2}"
@@ -29,31 +24,18 @@ generate_synapse_file() {
 	       --server-name ${SERVER_NAME}
 }
 
-configure_homeserver_yaml() {
+# will remove later
+deprecated_configure_yaml() {
 	local turnkey="${1}"
 	local filepath="${2}"
 
 	local ymltemp="$(mktemp)"
 
-	local enable_registration=$([[ $REGISTRATION_ENABLED -eq "yes" ]] && echo "True" || echo "False" )
-
 	awk -v TURNURIES="turn_uris: [\"turn:${SERVER_NAME}:3478?transport=udp\", \"turn:${SERVER_NAME}:3478?transport=tcp\"]" \
 	    -v TURNSHAREDSECRET="turn_shared_secret: \"${turnkey}\"" \
-	    -v PIDFILE="pid_file: /data/homeserver.pid" \
-	    -v DATABASE="database: \"/data/homeserver.db\"" \
-	    -v LOGFILE="log_file: \"/data/homeserver.log\"" \
-	    -v MEDIASTORE="media_store_path: \"/data/media_store\"" \
-	    -v ENABLE_REGISTRATION="enable_registration: ${enable_registration}" \
 	    '{
 		sub(/turn_shared_secret: "YOUR_SHARED_SECRET"/, TURNSHAREDSECRET);
 		sub(/turn_uris: \[\]/, TURNURIES);
-		sub(/pid_file: \/homeserver.pid/, PIDFILE);
-		sub(/database: "\/homeserver.db"/, DATABASE);
-		sub(/log_file: "\/homeserver.log"/, LOGFILE);
-		sub(/media_store_path: "\/media_store"/, MEDIASTORE);
-		sub(/enable_registration: False/, ENABLE_REGISTRATION);
-		sub(/web_client: True/, "web_client: False");
-		sub(/\# web_client_location: "\/path\/to\/web\/root"/, "web_client_location: \"/webclient\"")
 		print;
 	    }' "${filepath}" > "${ymltemp}"
 
@@ -97,10 +79,13 @@ generate_config() {
 
 	echo "-=> generate synapse config"
 	generate_synapse_file /data/homeserver.tmp
+
 	echo "-=> configure some settings in homeserver.yaml"
-	configure_homeserver_yaml $turnkey /data/homeserver.tmp
+	deprecated_configure_yaml $turnkey /data/homeserver.tmp
 
 	mv /data/homeserver.tmp /data/homeserver.yaml
+
+	/home_server_config.py
 
 	echo "-=> configure some settings in ${SERVER_NAME}.log.config"
 	configure_log_config
@@ -149,7 +134,7 @@ if [ "$1" = 'diff' ]; then
 fi
 
 if [ "$1" = 'generate' ]; then
-	generate_config()
+	generate_config
 fi
 
 exec "$@"
