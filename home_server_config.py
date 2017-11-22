@@ -12,7 +12,7 @@ db_name = os.getenv('DB_NAME', 'synapse')
 db_user = os.getenv('DB_USER', 'postgres')
 db_pasword = os.getenv('DB_PASSWORD', '')
 
-enable_registration = bool(distutils.util.strtobool(os.getenv('ENABLE_REGISTRATION', 'yes')))
+enable_registration = bool(distutils.util.strtobool(os.getenv('REGISTRATION_ENABLED', 'yes')))
 
 print 'DATABASE:', db_type
 print 'POSTGRES_HOST:', postgres_host
@@ -20,7 +20,7 @@ print 'POSTGRES_PORT:', postgres_port
 print 'DB_NAME:', db_name
 print 'DB_USER:', db_user
 print 'DB_PASSWORD:', db_pasword
-print 'ENABLE_REGISTRATION:', enable_registration
+print 'REGISTRATION_ENABLED:', enable_registration
 
 if db_type not in ('sqlite', 'postgresql'):
     print "DATABASE env is wrong: %s" % (db_type)
